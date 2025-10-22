@@ -1,0 +1,8 @@
+[submodule "src/ROMS"]
+	path = src/ROMS
+	url = https://github.com/myroms/roms
+	branch = develop
+[submodule "src/GeoGate"]
+	path = src/GeoGate
+	url = https://github.com/geogate-io/GeoGate
+	branch = feature/export
