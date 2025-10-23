@@ -1,0 +1,16 @@
+application:
+  disable_comps: ESMX_Data
+  link_libraries: conduit catalyst catalyst_fortran python3.12
+components:
+  geogate:
+    source_dir: src/GeoGate/src
+    build_type: cmake.external
+    build_args: "-DGEOGATE_USE_PYTHON=ON -DGEOGATE_USE_CATALYST=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_Fortran_FLAGS=-ffree-line-length-none"
+    fort_module: geogate_nuopc.mod
+    libraries: geogate geogate_io geogate_python geogate_catalyst geogate_shared
+  roms:
+    source_dir: src/ROMS
+    build_type: cmake.external
+    build_args: "-DROMS_EXECUTABLE=OFF -DLIBTYPE=STATIC -DROMS_SRC_DIR=src/ROMS -DMY_HEADER_DIR=../../../apps -DROMS_APP=IRENE -DMPI=ON"
+    fort_module: cmeps_roms_mod
+    libraries: ROMS
