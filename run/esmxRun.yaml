@@ -1,0 +1,37 @@
+ESMX:
+  App: 
+    globalResourceControl: true
+    logKindFlag: ESMF_LOGKIND_Multi
+    logAppendFlag: false
+    logFlush: true
+    fieldDictionary: fd.yaml
+    startTime: 2011-08-27T06:00:00
+    stopTime: 2011-08-29T00:00:00
+  Driver:
+    componentList: [ATM, OCN]
+    attributes:
+      Verbosity: low
+    runSequence: |
+      @60
+        ATM geogate_phases_python
+        #ATM -> OCN :remapMethod=bilinear:dstMaskValues=0:unmappedaction=ignore:zeroregion=select:srcTermProcessing=0:termOrder:srcseq
+        ATM -> OCN :remapMethod=bilinear:unmappedaction=ignore:zeroregion=select:srcTermProcessing=0:termOrder:srcseq
+        OCN
+      @
+ATM:
+  model: geogate
+  petList: 0
+  attributes: 
+    Verbosity: high 
+    Diagnostic: 0
+    DebugMode: .false.
+    PythonScripts: data_era5.py
+    ExportMeshFile: Data/ESMF/era5_IRENE_ESMFmesh_cdf5.nc
+    ExportFields: [Sa_u10m, Sa_v10m, Sa_pslv, Sa_t2m, Sa_q2m, Faxa_rain, Faxa_lwdn, Faxa_swnet]
+OCN:
+  model: roms
+  petList: 1-12
+  attributes:
+    Verbosity: high 
+    Diagnostic: 0
+    CouplingConfig: roms_data.yaml
