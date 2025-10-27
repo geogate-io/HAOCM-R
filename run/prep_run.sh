@@ -32,7 +32,7 @@ perl -p0777 -i -e "s|Hout\(idSrad\) \=\= F|Hout\(idSrad\) \=\= T|g" roms_irene.i
 perl -p0777 -i -e "s|Hout\(idEmPf\) \=\= F|Hout\(idEmPf\) \=\= T|g" roms_irene.in
 perl -p0777 -i -e "s|Hout\(idevap\) \=\= F|Hout\(idevap\) \=\= T|g" roms_irene.in
 perl -p0777 -i -e "s|Hout\(idrain\) \=\= F|Hout\(idrain\) \=\= T|g" roms_irene.in
-
+perl -p0777 -i -e "s|NHIS == 180|NHIS == 60 |g" roms_irene.in
 perl -p0777 -i -e "s|MyOuterLoop|${OuterLoop}|g" rbl4dvar.in
 perl -p0777 -i -e "s|MyPhase4DVAR|${Phase4DVAR}|g" rbl4dvar.in
 perl -p0777 -i -e "s|MyIRENEdir|.|g" rbl4dvar.in
