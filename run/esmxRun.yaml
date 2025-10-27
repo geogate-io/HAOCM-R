@@ -14,7 +14,6 @@ ESMX:
     runSequence: |
       @60
         ATM geogate_phases_python
-        #ATM -> OCN :remapMethod=bilinear:dstMaskValues=0:unmappedaction=ignore:zeroregion=select:srcTermProcessing=0:termOrder:srcseq
         ATM -> OCN :remapMethod=bilinear:unmappedaction=ignore:zeroregion=select:srcTermProcessing=0:termOrder:srcseq
         OCN
       @

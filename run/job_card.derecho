@@ -5,7 +5,7 @@
 #PBS -A P93300606
 #PBS -q develop
 #PBS -l select=1:ncpus=13:mpiprocs=13:ompthreads=1
-#PBS -l walltime=00:10:00
+#PBS -l walltime=00:20:00
 
 set -eux
 source ../envs/derecho_env_gnu.sh

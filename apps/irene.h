@@ -97,4 +97,5 @@
 # define ESMF_LIB
 # define FRC_COUPLING
 # define ROMS_STDOUT
+# define ESM_SETRUNCLOCK
 #endif
