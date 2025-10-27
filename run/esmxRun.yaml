@@ -21,7 +21,7 @@ ATM:
   model: geogate
   petList: 0
   attributes: 
-    Verbosity: high 
+    Verbosity: low 
     Diagnostic: 0
     DebugMode: .false.
     PythonScripts: data_era5.py
@@ -31,6 +31,6 @@ OCN:
   model: roms
   petList: 1-12
   attributes:
-    Verbosity: high 
+    Verbosity: low 
     Diagnostic: 0
     CouplingConfig: roms_data.yaml
