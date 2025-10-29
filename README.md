@@ -6,7 +6,7 @@ The DLROMS modeling system is a hybrid modeling application that combines a DL w
 
 The predefined configuration uses the ROMS Hurricane Irene configuration. The detailed information about configuration can be found in the [ROMS Idealized and Realistic Test Cases](https://github.com/myroms/roms_test/blob/main/IRENE/Coupling/roms_data_cdeps/Readme.md) repository. More information about the Regional Ocean Modeling System (ROMS) can be found on its [wiki page](https://github.com/myroms/roms/wiki).
 
-<img width="512" height="359" alt="Fig01" src="https://github.com/user-attachments/assets/9be9e2a6-e0ad-4520-9f63-9a2747320a21" />
+<img width="384" height="269" alt="Fig01" src="https://github.com/user-attachments/assets/9be9e2a6-e0ad-4520-9f63-9a2747320a21" />
 
 ## Usage
 
