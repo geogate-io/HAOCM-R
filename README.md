@@ -66,7 +66,7 @@ Aurora is a machine learning model that can predict atmospheric variables, such 
 
 To download ERA5 data for the Aurora Model, you can use the [get_data.py](https://github.com/geogate-io/DLROMS/blob/main/run/get_data.py) script. Please note that this script requires the cdsapi module to retrieve data from the Copernicus Climate Data Store (CDS). For more information on how to install the necessary module and configure your user settings, please refer to the instructions [here](https://cds.climate.copernicus.eu/how-to-api).
 
-
+The original dataset requires post-processing to ensure compatibility with Aurora's BatchDataset class used in the prediction script to read input data in an efficient way. For this purpose, the [split.py](https://github.com/geogate-io/DLROMS/blob/main/run/split.py) script can be used.
 
 ### Running Model
 
