@@ -6,7 +6,7 @@ import pandas as pd
 
 if __name__ == "__main__":
     # Load config from YAML file
-    with open("/glade/work/turuncu/ML/runs/DLROMS/run/config.yaml", "r") as f:
+    with open("config.yaml", "r") as f:
         settings = yaml.safe_load(f)
     prediction_settings = settings["aurora_config"]["prediction"]
 
