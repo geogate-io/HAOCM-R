@@ -20,5 +20,10 @@ PYTHON_ENV=/glade/work/turuncu/ML/envs/earth2studio
 export LD_LIBRARY_PATH=${PYTHON_ENV}/lib:${LD_LIBRARY_PATH}
 export NETCDF_INCDIR=${NETCDF_FORTRAN_ROOT}/include
 export NETCDF_LIBDIR=${NETCDF_FORTRAN_ROOT}/lib
-
+export PIO_C_PATH=${PARALLELIO_ROOT}
+export PIO_Fortran_PATH=${PARALLELIO_ROOT}
+export PIO_C_LIBRARY=${PIO_C_PATH}/lib
+export PIO_C_INCLUDE_DIR=${PIO_C_PATH}/include
+export PIO_Fortran_LIBRARY=${PIO_Fortran_PATH}/lib
+export PIO_Fortran_INCLUDE_DIR=${PIO_Fortran_PATH}/include
 module li

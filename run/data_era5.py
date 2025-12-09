@@ -9,6 +9,7 @@ channel = "atm"
 nx_atm = 416
 ny_atm = 196
 debug = False
+log = False
 
 # Query time string
 tstr = my_node['state/time_str']
@@ -31,8 +32,8 @@ for var in ds.data_vars:
         ds[var] = ds[var].astype(np.float64)
 
 # Redirect stdout
-if debug:
-    with open('output.txt', 'w') as f:
+if log:
+    with open('output_{}.txt'.format(tstr), 'w') as f:
         sys.stdout = f
         print("Time = {}".format(tstr))
         for vn, da in ds.data_vars.items():

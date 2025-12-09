@@ -6,3 +6,7 @@
 	path = src/GeoGate
 	url = https://github.com/geogate-io/GeoGate
 	branch = feature/export
+[submodule "src/CDEPS"]
+	path = src/CDEPS
+	url = https://github.com/geogate-io/CDEPS
+	branch = feature/build_fix
