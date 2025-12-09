@@ -58,7 +58,15 @@ PythonScripts: data_graphcast_operational.py
 
 In this configuration, the interactions between model components (DL Weather and ROMS Ocean models) are two-way. The DL Weather provides atmospheric forcing to the ocean component (ROMS) and receives sea surface temperature (SST) to use it to make more accurate predictions. This configuration represents the complex and non-linear two-way interaction.
 
-[...]
+##### a. Aurora (0.25 deg)
+
+Aurora is a machine learning model that can predict atmospheric variables, such as temperature. It is a foundation model, which means that it was first generally trained on a lot of data, and then can adapted to specialised atmospheric forecasting tasks with relatively little data. Mor information about the model can be found in [here](https://microsoft.github.io/aurora/intro.html). The detailed instructions to use the coupled configuration can be found in following subsections.
+
+###### Prepare Input for Aurora Model
+
+To download ERA5 data for the Aurora Model, you can use the get_data.py script. Please note that this script requires the cdsapi module to retrieve data from the Copernicus Climate Data Store (CDS). For more information on how to install the necessary module and configure your user settings, please refer to the instructions here.
+
+To download ERA5 data for Aurora Model [get_data.py](https://github.com/geogate-io/DLROMS/blob/main/run/get_data.py) script can be used. Also note that the script requires `cdsapi` module to download data from Copernicus Climate Data Store (CDS). More information about installing required module and configuring user can be found in [here](https://cds.climate.copernicus.eu/how-to-api).
 
 ### Running Model
 
