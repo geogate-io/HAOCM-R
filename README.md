@@ -6,7 +6,7 @@ The DLROMS modeling system is a hybrid modeling application that combines a DL w
 
 The predefined configuration uses the ROMS Hurricane Irene configuration. The detailed information about configuration can be found in the [ROMS Idealized and Realistic Test Cases](https://github.com/myroms/roms_test/blob/main/IRENE/Coupling/roms_data_cdeps/Readme.md) repository. More information about the Regional Ocean Modeling System (ROMS) can be found on its [wiki page](https://github.com/myroms/roms/wiki).
 
-<img width="512" height="359" alt="Fig01" src="https://github.com/user-attachments/assets/9be9e2a6-e0ad-4520-9f63-9a2747320a21" />
+<img width="384" height="269" alt="Fig01" src="https://github.com/user-attachments/assets/9be9e2a6-e0ad-4520-9f63-9a2747320a21" />
 
 ## Usage
 
@@ -44,7 +44,15 @@ This configuration uses ERA5 data found in the [ROMS Idealized and Realistic Tes
 
 ##### b. GraphCast Operational (0.25 deg)
 
-[...]
+The [GraphCastOperational](https://nvidia.github.io/earth2studio/modules/generated/models/px/earth2studio.models.px.GraphCastOperational.html#earth2studio.models.px.GraphCastOperational) model is a high-resolution model (0.25 degree resolution, 13 pressure levels) pre-trained on ERA5 data from 1979 to 2017 and fine-tuned on HRES data from 2016 to 2021.
+
+The GraphCastOperational model does not provide all the variables needed to force the ROMS ocean model. Therefore, variables such as `net shortwave radiation`, `downwelling longwave radiation`, and `surface relative humidity` are sourced directly from the ERA5 dataset to meet these requirements. There are plans to enhance GraphCast by incorporating the missing variables, either through fine-tuning or by utilizing another AI/ML-based weather model that supplies all necessary variables and interacts with the ocean component by exchanging sea surface temperature (SST) data as well.
+
+To run this configuration, the `PythonScripts` and `ExportMeshFile` options need to be set as follows in the [esmxRun.yaml](https://github.com/geogate-io/DLROMS/blob/main/run/esmxRun.yaml) configuration file.
+
+```
+PythonScripts: data_graphcast_operational.py
+```
 
 #### Two-way Coupled
 
@@ -59,3 +67,17 @@ Once the configuration is compiled successfully, it can be run by using the job 
 ```console
 $ qsub job_card.derecho
 ```
+
+To run GraphCast models on GPU, the job submission script can be modified to request GPU resources as follows:
+
+```
+...
+#PBS -q main
+#PBS -l select=1:ncpus=2:mpiprocs=2:ompthreads=1:ngpus=1
+#PBS -l walltime=03:00:00
+...
+```
+
+### References
+
+The GraphCast configurations use NVIDIA's [Earth2Studio](https://nvidia.github.io/earth2studio/index.html) toolkit to run available GraphCast models ([Lam et al., 2023](https://www.science.org/doi/10.1126/science.adi2336)).
