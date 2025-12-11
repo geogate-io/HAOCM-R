@@ -18,6 +18,7 @@ module load libcatalyst/2.0.0
 
 PYTHON_ENV=/glade/work/turuncu/ML/envs/earth2studio
 export LD_LIBRARY_PATH=${PYTHON_ENV}/lib:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=${HDF5_ROOT}/lib:${LD_LIBRARY_PATH}
 export NETCDF_INCDIR=${NETCDF_FORTRAN_ROOT}/include
 export NETCDF_LIBDIR=${NETCDF_FORTRAN_ROOT}/lib
 export PIO_C_PATH=${PARALLELIO_ROOT}
