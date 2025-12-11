@@ -1,7 +1,7 @@
 aurora_config:
     generic:
         data_source: ecmwf
-        data_path: /glade/derecho/scratch/turuncu/data/split_files_updated
+        data_path: /glade/derecho/scratch/turuncu/data/Data_aurora/split_files
         new_surf_vars: # mean and std values calculated from ERA5 2012-2017 data
             10w: # 10 meter wind speed, m/s
                 name: w10
@@ -56,4 +56,9 @@ aurora_config:
     prediction:
         start: "2011-08-26T18:00:00" # we need data also for t-6 and t-12 for prediction at "2011-08-27T06:00:00"
         end: "2011-09-01T00:00:00"
-        steps: 1 # lead time for forecast in steps of 6 hours
+        steps: 2 # lead time for forecast in steps of 6 hours
+        checkpoint_file: /glade/work/turuncu/ML/research/aurora/run_2012-2017_all_vars/aurora-0.25-pretrained-new.ckpt
+        batch_size: 1
+        num_workers: 0 # >0 such as 4 is giving error since we are running GeoGate on a single PET
+        distributed_sampler: false
+        output_path: .
