@@ -20,9 +20,10 @@ class AuroraDataset(Dataset):
     Aurora Dataset class for loading ERA5 data for training, validation and testing.
     Provides paired batches: input (t-6h, t) and target (t+6h).
     """
-    def __init__(self, data_path: str, start_date: str, end_date: str, time_delta: int, variables: Dict[str, Dict[str, str]], timing: bool=False):
+    def __init__(self, data_path: str, start_date: str, end_date: str, time_delta: int, variables: Dict[str, Dict[str, str]], sst: np.ndarray = None):
         self.data_path = data_path
         self.variables = variables
+        self.sst = sst
         self.start_indx = 1 # Because we need t-6h for input
         self.start_date = datetime.strptime(start_date, "%Y-%m-%dT%H:%M:%S")
         self.end_date = datetime.strptime(end_date, "%Y-%m-%dT%H:%M:%S")
@@ -33,7 +34,7 @@ class AuroraDataset(Dataset):
     def __len__(self) -> int:
         return self.len
 
-    def __getbatch__(self, idxs: List[int], remove_south_pole=False) -> Batch:
+    def __getbatch__(self, idxs: List[int], remove_south_pole=False, update_sst=False) -> Batch:
         # Define required dictionaries
         surf_vars = {}
         static_vars = {}
@@ -46,6 +47,7 @@ class AuroraDataset(Dataset):
             file_name = f"data_{time_str}.nc"
             file_list.append(os.path.join(self.data_path, file_name))
         ds = xr.open_mfdataset(file_list, data_vars="all", chunks='auto', engine="netcdf4")
+        print(ds)
 
         # Fix for target tensors since Aurora model does not return data for the south pole
         if remove_south_pole:
@@ -56,8 +58,19 @@ class AuroraDataset(Dataset):
             if section == "surf":
                 for key, val in self.variables[section].items():
                     # Accumulated variables
-                    if key in ["swnet", "lwnet", "swdn", "lwdn", "tp"]:
-                        surf_vars[key] = torch.from_numpy((ds[val]/3600.0).values[None])  # Convert from per hour to per second
+                    if key in ["swnet", "lwnet", "swdn", "lwdn", "tp"]: # Convert from per hour to per second
+                        surf_vars[key] = torch.from_numpy((ds[val]/3600.0).values[None])
+                    elif key == "sst" and self.sst is not None and update_sst: # Two-way coupling with provided SST
+                        print("Using provided SST for coupling...", flush=True)
+                        sst = xr.DataArray(
+                            self.sst,
+                            dims=('latitude', 'longitude'),
+                            coords=ds.coords.drop_vars('level'),
+                            name='sst',
+                            attrs={'units': 'degC', 'description': 'sea surface temperature'}
+                        )
+                        sst.to_netcdf("`sst_temp.nc`", engine="netcdf4")
+                        surf_vars[key] = torch.from_numpy(ds[val].values[None])
                     else:
                         surf_vars[key] = torch.from_numpy(ds[val].values[None])
             elif section == "static":
@@ -90,7 +103,7 @@ class AuroraDataset(Dataset):
 
         # Get input batch
         input_idx = [idx-1, idx]
-        input_batch = self.__getbatch__(input_idx)
+        input_batch = self.__getbatch__(input_idx, update_sst=True)
 
         # Get target batch
         target_idx = [idx+1]
@@ -173,20 +186,19 @@ def find_closest_6h_interval(time):
 
 if __name__ == "__main__":
     # Arguments
-    state = "export"
-    channel = "atm"
     nx_atm = 1440
     ny_atm = 720
     debug = True
     perform_temporal_interpolation = True
     temporal_interpolation_method = "linear"
-    update_sst = False
+    update_sst = True # two-way coupling
 
     # Set epoch date
     epoch_date = pd.Timestamp("1970-01-01")
 
     # Access to channel
-    my_channel = my_node["channels/{}/{}".format(state, channel)]
+    my_channel_atm = my_node["channels/{}/{}".format("export", "atm")]
+    my_channel_ocn = my_node["channels/{}/{}".format("import", "ocn")]
     forecast_time_str = my_node['state/time_str'] # e.g., "2011-08-27T06:00:00"
     forecast_time = datetime.strptime(forecast_time_str, "%Y-%m-%dT%H:%M:%S")
     
@@ -263,7 +275,15 @@ if __name__ == "__main__":
 
     # Prepare Aurora dataset that provides paired batches: input, target
     data_path = generic_settings["data_path"]
-    dataset = AuroraDataset(data_path, start_date, end_date, time_delta, variables)
+    if update_sst:
+        # Get SST from the channel
+        sst = my_channel_ocn['data/fields/sea_surface_temperature/values'].reshape((ny_atm,nx_atm))
+        print(f"SST shape: {np.shape(sst)}, min: {np.min(sst)}, max: {np.max(sst)}", flush=True)
+        # Pass SST to the dataset for two-way coupling
+        dataset = AuroraDataset(data_path, start_date, end_date, time_delta, variables, sst)
+    else:
+        # No SST provided
+        dataset = AuroraDataset(data_path, start_date, end_date, time_delta, variables)
 
     # Create DataLoader
     data_loader = DataLoader(
@@ -335,6 +355,10 @@ if __name__ == "__main__":
                     print(f"Interpolating data using {temporal_interpolation_method} method to forecast time: {forecast_time_str}", flush=True)
                     ds_interp = ds.interp(time=forecast_time_str, method=temporal_interpolation_method).drop_vars('time').astype(np.float64)
                     if debug:
+                        # Print statistics for debugging
+                        for var in ds_interp.data_vars:
+                            print(f"Statistics at {forecast_time_str} for {var}: min={ds_interp[var].min().values}, max={ds_interp[var].max().values}", flush=True)
+                        # Save interpolated file for debugging
                         ds_interp.to_netcdf(os.path.join(ofile_path, f"pred_{forecast_time_str}_interp.nc"), engine="netcdf4")
                 else:
                     print("No temporal interpolation needed since forecast time matches the model output time.", flush=True)
@@ -345,7 +369,7 @@ if __name__ == "__main__":
 
             # Return Conduit node with data
             my_node_return = Node()
-            my_node_return.update(my_channel)
+            my_node_return.update(my_channel_atm)
             my_node_return['data/fields/Sa_u10m/values'] = ds_interp['10u'].values.reshape(-1) # m/s
             my_node_return['data/fields/Sa_v10m/values'] = ds_interp['10v'].values.reshape(-1) # m/s
             my_node_return['data/fields/Sa_pslv/values'] = ds_interp['msl'].values.reshape(-1)/100.0 # Pa -> hPa
