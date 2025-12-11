@@ -178,12 +178,16 @@ if __name__ == "__main__":
     nx_atm = 1440
     ny_atm = 720
     debug = True
-    method = "linear"
-    coupling_type = "one-way" # "one-way" or "two-way"
+    perform_temporal_interpolation = True
+    temporal_interpolation_method = "linear"
+    update_sst = False
+
+    # Set epoch date
+    epoch_date = pd.Timestamp("1970-01-01")
 
     # Access to channel
     my_channel = my_node["channels/{}/{}".format(state, channel)]
-    forecast_time_str = my_node['state/time_str'] #"2011-08-27T06:00:00" #
+    forecast_time_str = my_node['state/time_str'] # e.g., "2011-08-27T06:00:00"
     forecast_time = datetime.strptime(forecast_time_str, "%Y-%m-%dT%H:%M:%S")
     
     # Find lower and upper bound or requested time
@@ -298,7 +302,7 @@ if __name__ == "__main__":
             if os.path.exists(ofile):
                 print(f"File {ofile} already exists. Use existing prediction...", flush=True)
                 # Load existing dataset
-                ds = xr.open_dataset(ofile)
+                ds = xr.open_dataset(ofile, engine="netcdf4")
             else:
                 # Get start time
                 start_time = time.time()
@@ -308,16 +312,9 @@ if __name__ == "__main__":
 
                 # Create dataset from predictions
                 ds = xr.concat([batch_to_dataset(pred) for pred in preds], dim="time", data_vars='all', coords='different', compat='equals')
-
-                # Update epoch time to seconds since 1970-01-01
-                epoch_date = pd.Timestamp("1970-01-01")
-                time_since_epoch = (ds['time'].astype('datetime64[s]') - epoch_date.to_numpy().astype('datetime64[s]')).astype(float)
-                ds['time'] = time_since_epoch
-                ds['time'].attrs["units"] = "seconds since 1970-01-01"
-                ds['time'].attrs["calendar"] = "gregorian"
                 
                 # Save predictions to netCDF files
-                ds.to_netcdf(ofile)
+                ds.to_netcdf(ofile, engine="netcdf4")
 
                 # Get end time
                 end_time = time.time()
@@ -328,15 +325,23 @@ if __name__ == "__main__":
                 # Print info
                 print(f"Made {int(prediction_settings['steps'])*time_delta}h prediction for batch {batch+1}/{len(data_loader)} with time {target.metadata.time[0].strftime('%Y-%m-%d %H:%M:%S')} in {batch_time:.4f} seconds.", flush=True)
 
-            # Perform temporal interpolation, two rollout step is needed to perform it: t+0h -> ? -> t+6h
-            if True: #forecast_time != time_lb:
-                time_range = pd.date_range(forecast_time_str, periods=1, freq=f"{time_delta}h")
-                print(f"Performing temporal interpolation to forecast time: {time_range.strftime('%Y-%m-%dT%H:%M:%S')}", flush=True)
-                ds_interp = ds.isel(batch=0).interp(time=time_range, method=method).isel(time=0)
-                #if debug:
-                #    ds_interp.to_netcdf(ofile.replace(".nc", "_interp.nc"))
+            # Keep only coupling variables
+            ds = ds[['10u', '10v', 'msl', '2t', '2rh', 'lwdn', 'swnet', 'time']].drop_vars('rollout_step').isel(batch=0)
+
+            # Perform temporal interpolation to forecast time, two rollout step is needed to perform: t+0h -> ? -> t+6h
+            # Since Aurora output is in float32, we need to convert to float64 to be compatible with GeoGate - TODO: Fix this in GeoGate to allow float32
+            if perform_temporal_interpolation:
+                if forecast_time != time_lb:
+                    print(f"Interpolating data using {temporal_interpolation_method} method to forecast time: {forecast_time_str}", flush=True)
+                    ds_interp = ds.interp(time=forecast_time_str, method=temporal_interpolation_method).drop_vars('time').astype(np.float64)
+                    if debug:
+                        ds_interp.to_netcdf(os.path.join(ofile_path, f"pred_{forecast_time_str}_interp.nc"), engine="netcdf4")
+                else:
+                    print("No temporal interpolation needed since forecast time matches the model output time.", flush=True)
+                    ds_interp = ds.isel(time=0).astype(np.float64)
             else:
-                ds_interp = ds.isel(batch=0, time=0)
+                print("No temporal interpolation requested.", flush=True)
+                ds_interp = ds.isel(time=0).astype(np.float64)
 
             # Return Conduit node with data
             my_node_return = Node()
