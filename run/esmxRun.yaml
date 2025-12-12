@@ -12,10 +12,11 @@ ESMX:
     attributes:
       Verbosity: low
     runSequence: |
-      @60
+      @3600
         ATM geogate_phases_python
         ATM -> OCN :remapMethod=bilinear:unmappedaction=ignore:zeroregion=select:srcTermProcessing=0:termOrder:srcseq
         OCN
+        OCN -> ATM :remapMethod=bilinear:unmappedaction=ignore:zeroregion=select:srcTermProcessing=0:termOrder:srcseq
       @
 ATM:
   model: geogate
@@ -24,8 +25,9 @@ ATM:
     Verbosity: low 
     Diagnostic: 0
     DebugMode: .false.
-    PythonScripts: data_era5.py
-    ExportMeshFile: Data/ESMF/era5_IRENE_ESMFmesh_cdf5.nc
+    PythonScripts: data_aurora.py
+    ExportMeshFile: Mesh/mesh_aurora.nc
+    ImportOnExportMesh: .true.
     ExportFields: [Sa_u10m, Sa_v10m, Sa_pslv, Sa_t2m, Sa_q2m, Faxa_rain, Faxa_lwdn, Faxa_swnet]
 OCN:
   model: roms
