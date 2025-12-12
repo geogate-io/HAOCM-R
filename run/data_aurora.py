@@ -20,10 +20,10 @@ class AuroraDataset(Dataset):
     Aurora Dataset class for loading ERA5 data for training, validation and testing.
     Provides paired batches: input (t-6h, t) and target (t+6h).
     """
-    def __init__(self, data_path: str, start_date: str, end_date: str, time_delta: int, variables: Dict[str, Dict[str, str]], sst: np.ndarray = None):
+    def __init__(self, data_path: str, start_date: str, end_date: str, time_delta: int, variables: Dict[str, Dict[str, str]], import_vars: Dict[str, Dict[str, float]] = None) -> None:
         self.data_path = data_path
         self.variables = variables
-        self.sst = sst
+        self.import_vars = import_vars
         self.start_indx = 1 # Because we need t-6h for input
         self.start_date = datetime.strptime(start_date, "%Y-%m-%dT%H:%M:%S")
         self.end_date = datetime.strptime(end_date, "%Y-%m-%dT%H:%M:%S")
@@ -34,7 +34,36 @@ class AuroraDataset(Dataset):
     def __len__(self) -> int:
         return self.len
 
-    def __getbatch__(self, idxs: List[int], remove_south_pole=False, update_sst=False) -> Batch:
+    def __blend__(self, da: xr.DataArray, var: np.ndarray, name: str, scale: float = 1.0, add_offset: float = 0.0, missing_value=1.0e20) -> xr.DataArray:
+        """
+        Blend provided data with existing variable in the dataset
+        """
+        # Create a new DataArray from numpy array
+        da_new = xr.DataArray(
+            var,
+            dims=('latitude', 'longitude'),
+            coords=da.isel(latitude=slice(None, -1)).coords.drop_vars(['time']),
+            name=name
+        )
+
+        # We need to pad the new data with a row of NaNs at the end to match the shape of the ERA5 variable (721, 1440) vs. (720, 1440)
+        da_new_padded = xr.concat([da_new, xr.full_like(da_new.isel(latitude=-1), np.nan)], dim="latitude").fillna(missing_value)
+        da_new_padded = da_new_padded.assign_coords(latitude=("latitude", da.latitude.values))
+
+        # Extend the new data to match the time dimension of the ERA5 variable (2 time steps)
+        da_new_padded_ext = xr.concat([da_new_padded.expand_dims({"time": [i]}) for i in range(2)], dim="time")
+        da_new_padded_ext = da_new_padded_ext.chunk({'time': 1, 'latitude': -1, 'longitude': -1})
+        da_new_padded_ext = da_new_padded_ext.assign_coords(time=("time", da.time.values))
+
+        # Apply scale and offset
+        da_new_padded_ext = da_new_padded_ext * scale + add_offset
+
+        # Blend the new data with the existing variable
+        da_blended = da.where(da_new_padded_ext > missing_value/2.0, da_new_padded_ext)
+
+        return da_blended
+
+    def __getbatch__(self, idxs: List[int], remove_south_pole=False, has_import=False) -> Batch:
         # Define required dictionaries
         surf_vars = {}
         static_vars = {}
@@ -47,7 +76,6 @@ class AuroraDataset(Dataset):
             file_name = f"data_{time_str}.nc"
             file_list.append(os.path.join(self.data_path, file_name))
         ds = xr.open_mfdataset(file_list, data_vars="all", chunks='auto', engine="netcdf4")
-        print(ds)
 
         # Fix for target tensors since Aurora model does not return data for the south pole
         if remove_south_pole:
@@ -57,22 +85,22 @@ class AuroraDataset(Dataset):
         for section in self.variables.keys():
             if section == "surf":
                 for key, val in self.variables[section].items():
-                    # Accumulated variables
-                    if key in ["swnet", "lwnet", "swdn", "lwdn", "tp"]: # Convert from per hour to per second
+                    # Accumulated variables, convert from per hour to per second
+                    if key in ["swnet", "lwnet", "swdn", "lwdn", "tp"]:
                         surf_vars[key] = torch.from_numpy((ds[val]/3600.0).values[None])
-                    elif key == "sst" and self.sst is not None and update_sst: # Two-way coupling with provided SST
-                        print("Using provided SST for coupling...", flush=True)
-                        sst = xr.DataArray(
-                            self.sst,
-                            dims=('latitude', 'longitude'),
-                            coords=ds.coords.drop_vars('level'),
-                            name='sst',
-                            attrs={'units': 'degC', 'description': 'sea surface temperature'}
-                        )
-                        sst.to_netcdf("`sst_temp.nc`", engine="netcdf4")
-                        surf_vars[key] = torch.from_numpy(ds[val].values[None])
                     else:
                         surf_vars[key] = torch.from_numpy(ds[val].values[None])
+                    # Two-way coupling: check if we need to import variables and update input data
+                    if self.import_vars is not None and has_import:
+                        if key in self.import_vars.keys():
+                            # Get imported variable
+                            data = self.import_vars[key]["data"]
+                            add_offset = self.import_vars[key]["add_offset"]
+                            scale_factor = self.import_vars[key]["scale_factor"]
+                            missing_value = self.import_vars[key]["missing_value"]
+                            # Update input data with provided variable
+                            da_blended = self.__blend__(ds[val], data, name=key, scale=scale_factor, add_offset=add_offset, missing_value=missing_value)
+                            surf_vars[key] = torch.from_numpy(da_blended.values[None])
             elif section == "static":
                 for key, val in self.variables[section].items():
                     if len(idxs) > 1:
@@ -103,7 +131,7 @@ class AuroraDataset(Dataset):
 
         # Get input batch
         input_idx = [idx-1, idx]
-        input_batch = self.__getbatch__(input_idx, update_sst=True)
+        input_batch = self.__getbatch__(input_idx, has_import=True)
 
         # Get target batch
         target_idx = [idx+1]
@@ -191,14 +219,16 @@ if __name__ == "__main__":
     debug = True
     perform_temporal_interpolation = True
     temporal_interpolation_method = "linear"
-    update_sst = True # two-way coupling
+    has_import = True # enable two-way coupling and feedback from ocean to atmosphere
 
     # Set epoch date
     epoch_date = pd.Timestamp("1970-01-01")
 
     # Access to channel
+    # Ocean model data on atmospheric model grid/mesh for "import_on_export_grid"
+    # Use "import" to access data on the ocean model grid/mesh
     my_channel_atm = my_node["channels/{}/{}".format("export", "atm")]
-    my_channel_ocn = my_node["channels/{}/{}".format("import", "ocn")]
+    my_channel_ocn = my_node["channels/{}/{}".format("import_on_export_grid", "ocn")]
     forecast_time_str = my_node['state/time_str'] # e.g., "2011-08-27T06:00:00"
     forecast_time = datetime.strptime(forecast_time_str, "%Y-%m-%dT%H:%M:%S")
     
@@ -275,12 +305,26 @@ if __name__ == "__main__":
 
     # Prepare Aurora dataset that provides paired batches: input, target
     data_path = generic_settings["data_path"]
-    if update_sst:
-        # Get SST from the channel
+    if has_import:
+        # Get variable and land-sea mask on atmospheric model grid/mesh from the channel
         sst = my_channel_ocn['data/fields/sea_surface_temperature/values'].reshape((ny_atm,nx_atm))
         print(f"SST shape: {np.shape(sst)}, min: {np.min(sst)}, max: {np.max(sst)}", flush=True)
-        # Pass SST to the dataset for two-way coupling
-        dataset = AuroraDataset(data_path, start_date, end_date, time_delta, variables, sst)
+        lsm = my_channel_ocn['data/fields/ocean_mask/values'].reshape((ny_atm,nx_atm))
+        # Mask data over land with missing value
+        missing_value = 1.0e20
+        epsilon = 1.0e-20
+        sst = np.where(lsm == 1.0, sst, missing_value)
+        # Create data structure to pass to the dataset
+        import_vars = {
+            "sst": {
+                "data": sst,
+                "scale_factor": 1.0,
+                "add_offset": 273.15,
+                "missing_value": missing_value
+            }
+        }
+        # Pass import variables to the dataset for two-way coupling
+        dataset = AuroraDataset(data_path, start_date, end_date, time_delta, variables, import_vars=import_vars)
     else:
         # No SST provided
         dataset = AuroraDataset(data_path, start_date, end_date, time_delta, variables)
