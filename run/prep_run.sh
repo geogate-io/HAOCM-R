@@ -6,12 +6,11 @@ OuterLoop=1
 Phase4DVAR=1
 
 # Clean existing configuration files
-rm -f roms_irene.in rbl4dvar.in roms_data.yaml
+rm -f roms_irene.in rbl4dvar.in
 
 # Download config files
 wget -c -O roms_irene.in https://raw.githubusercontent.com/myroms/roms_test/refs/heads/main/IRENE/Coupling/roms_data_cdeps/roms_irene.tmpl
 wget -c -O rbl4dvar.in https://raw.githubusercontent.com/myroms/roms_test/refs/heads/main/IRENE/Coupling/roms_data_cdeps/rbl4dvar.tmpl
-wget -c -O roms_data.yaml https://raw.githubusercontent.com/myroms/roms_test/refs/heads/main/IRENE/Coupling/roms_data_cdeps/roms_cdeps_era5.yaml
 cp ../src/ROMS/ROMS/External/varinfo.yaml .
 
 # Parse config files
@@ -36,8 +35,6 @@ perl -p0777 -i -e "s|NHIS == 180|NHIS == 60 |g" roms_irene.in
 perl -p0777 -i -e "s|MyOuterLoop|${OuterLoop}|g" rbl4dvar.in
 perl -p0777 -i -e "s|MyPhase4DVAR|${Phase4DVAR}|g" rbl4dvar.in
 perl -p0777 -i -e "s|MyIRENEdir|.|g" rbl4dvar.in
-
-perl -p0777 -i -e "s|CouplingType:    1|CouplingType:    2|g" roms_data.yaml
 
 # Download ROMS input 
 RUN_DIR=$PWD
