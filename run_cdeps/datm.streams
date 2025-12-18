@@ -1,0 +1,31 @@
+stream_info:               atmmesh.01 atmmesh.02
+
+taxmode01:                 limit
+mapalgo01:                 redist
+tInterpAlgo01:             linear
+readMode01:                single
+dtlimit01:                 1.5
+stream_offset01:           0
+yearFirst01:               2011
+yearLast01:                2011
+yearAlign01:               2011
+stream_vectors01:          null
+stream_mesh_file01:        Mesh/era5_mesh_cdf5.nc
+stream_lev_dimname01:      null
+stream_data_files01:       Data/merged_1h_with_humidity.nc
+stream_data_variables01:   "strd Faxa_lwdn" "msl Sa_pslv" "t2m Sa_t2m" "rh2 Sa_q2m" "tp Faxa_rain" "u10 Sa_u10m" "v10 Sa_v10m"
+
+taxmode02:                 limit
+mapalgo02:                 redist
+tInterpAlgo02:             coszen
+readMode02:                single
+dtlimit02:                 1.5
+stream_offset02:           0
+yearFirst02:               2011
+yearLast02:                2011
+yearAlign02:               2011
+stream_vectors02:          null
+stream_mesh_file02:        Mesh/era5_mesh_cdf5.nc
+stream_lev_dimname02:      null
+stream_data_files02:       Data/merged_1h_with_humidity.nc
+stream_data_variables02:   "ssr Faxa_swnet"

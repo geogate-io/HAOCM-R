@@ -1,0 +1,53 @@
+ESMX:
+  App: 
+    globalResourceControl: true
+    logKindFlag: ESMF_LOGKIND_Multi
+    logAppendFlag: false
+    logFlush: true
+    fieldDictionary: fd.yaml
+    startTime: 2011-08-27T06:00:00
+    stopTime: 2011-08-29T00:00:00
+  Driver:
+    componentList: [ATM, OCN]
+    attributes:
+      Verbosity: low
+    runSequence: |
+      @60
+        ATM
+        ATM -> OCN :remapMethod=bilinear:unmappedaction=ignore:zeroregion=select:srcTermProcessing=0:termOrder:srcseq
+        OCN
+      @
+ATM:
+  model: datm 
+  petList: 0
+  attributes: 
+    Verbosity: high
+    Diagnostic: 0
+    case_name: data.cpld
+    ScalarFieldCount: 3
+    ScalarFieldIdxGridNX: 1
+    ScalarFieldIdxGridNY: 2
+    ScalarFieldIdxNextSwCday: 3
+    ScalarFieldName: cpl_scalars
+    start_type: startup
+    read_restart: false
+    restart_dir: ./
+    restart_n: 12
+    restart_option: nhours
+    restart_ymd: -999
+    stop_n: 42
+    stop_option: nhours
+    stop_ymd: -999
+    orb_eccen: 1.e36
+    orb_iyear: 2000
+    orb_iyear_align: 2000
+    orb_mode: fixed_year
+    orb_mvelp: 1.e36
+    orb_obliq: 1.e36
+OCN:
+  model: roms
+  petList: 1-12
+  attributes:
+    Verbosity: high 
+    Diagnostic: 0
+    CouplingConfig: roms_data.yaml
