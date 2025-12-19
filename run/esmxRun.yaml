@@ -12,7 +12,7 @@ ESMX:
     attributes:
       Verbosity: low
     runSequence: |
-      @3600
+      @60
         ATM geogate_phases_python
         ATM -> OCN :remapMethod=bilinear:unmappedaction=ignore:zeroregion=select:srcTermProcessing=0:termOrder:srcseq
         OCN

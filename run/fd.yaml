@@ -48,3 +48,8 @@ field_dictionary:
       alias: sea_surface_temperature
       canonical_units: K
       description: ocean export
+    #
+    - standard_name: So_omask
+      alias: ocean_mask
+      canonical_units: 1
+      description: ocean export

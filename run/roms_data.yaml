@@ -93,7 +93,7 @@ date: 2011-08-27T06:00:00Z                   # Starting date, Hurricane Irene
 
 forecast_length: &ForecastLength PT42H       # 42 hours (ISO 8601)
  
-coupling_step:   &dt 3600.0d0                  # 1 minute (PT60S)
+coupling_step:   &dt 60.0d0                  # 1 minute (PT60S)
 
 linked_grid:     1                           # linked ROMS nested grid number
 
@@ -118,7 +118,7 @@ standard_input:
 
 import_variables: [dLWrad, SWrad, Pair, Tair, Qair, rain, Uwind, Vwind]
 
-export_variables: [SST, mask_rho]
+export_variables: [mask_rho, SST]
 
 ################################
 ### Exported Fields Metadata ###
@@ -271,12 +271,12 @@ import:
     long_name:           surface air pressure
     short_name:          Pair                                   # Sa_pslv
     data_variables:      [Pair, time]
-    source_units:        mb
+    source_units:        Pa
     destination_units:   mb
     source_grid:         cell_center
     destination_grid:    cell_center
     add_offset:          0.0d0
-    scale:               1.0d0
+    scale:               0.01d0
     debug_write:         false
     connected_to:        *DATA
     map_type:            mapbilnr
@@ -286,11 +286,11 @@ import:
     long_name:           surface (2m) air temperature
     short_name:          Tair                                   # Sa_t2m
     data_variables:      [Tair, time]
-    source_units:        C
+    source_units:        K
     destination_units:   C
     source_grid:         cell_center
     destination_grid:    cell_center
-    add_offset:          0.0d0
+    add_offset:          -273.15d0
     scale:               1.0d0
     debug_write:         false
     connected_to:        *DATA
@@ -301,12 +301,12 @@ import:
     long_name:           surface relative humidity
     short_name:          Qair                                   # Sa_q2m
     data_variables:      [Qair, time]
-    source_units:        percent
+    source_units:        fraction 
     destination_units:   fraction
     source_grid:         cell_center
     destination_grid:    cell_center
     add_offset:          0.0d0
-    scale:               0.01d0
+    scale:               1.0d0
     debug_write:         false
     connected_to:        *DATA
     map_type:            mapbilnr
