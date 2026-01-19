@@ -30,7 +30,7 @@ if __name__ == "__main__":
     # Arguments
     nx_atm = 1440
     ny_atm = 720
-    debug = True
+    debug = False
     ofile_path = '.'
     perform_temporal_interpolation = True
     temporal_interpolation_method = "linear"
@@ -207,6 +207,12 @@ if __name__ == "__main__":
                 # Create dataset from predictions
                 ds = xr.concat([batch_to_dataset(pred) for pred in preds], dim="time", data_vars='all', coords='different', compat='equals')
 
+                # Do not allow negative values for humidity, precipitation and shortwave radiation
+                ds['2q'] = ds['2q'].clip(min=0.0)
+                ds['tp'] = ds['tp'].clip(min=0.0)
+                ds['swdn'] = ds['swdn'].clip(min=0.0)
+                ds['swnet'] = ds['swnet'].clip(min=0.0)
+
                 # Save predictions to netCDF files
                 ds.to_netcdf(ofile, engine="netcdf4")
 
@@ -220,7 +226,7 @@ if __name__ == "__main__":
                 print(f"Made {int(prediction_settings['steps'])*time_delta}h prediction for batch {batch+1}/{len(data_loader)} with time {target.metadata.time[0].strftime('%Y-%m-%d %H:%M:%S')} in {batch_time:.4f} seconds.", flush=True)
 
     # Keep only coupling variables
-    ds = ds[['10u', '10v', 'msl', '2t', '2rh', 'lwdn', 'swnet', 'time']].drop_vars('rollout_step').isel(batch=0)
+    ds = ds[['10u', '10v', 'msl', '2t', '2rh', 'lwdn', 'swnet', 'tp', 'time']].drop_vars('rollout_step').isel(batch=0)
 
     # Perform temporal interpolation to forecast time, two rollout step is needed to perform: t+0h -> ? -> t+6h
     # Since Aurora output is in float32, we need to convert to float64 to be compatible with GeoGate - TODO: Fix this in GeoGate to allow float32
@@ -254,7 +260,7 @@ if __name__ == "__main__":
     my_node_return['data/fields/Sa_pslv/values'] = ds_interp['msl'].values.reshape(-1) # Pa
     my_node_return['data/fields/Sa_t2m/values'] = ds_interp['2t'].values.reshape(-1) # K
     my_node_return['data/fields/Sa_v10m/values'] = ds_interp['10v'].values.reshape(-1) # m/s
-    my_node_return['data/fields/Faxa_rain/values']  = np.zeros_like(ds_interp['2t'].values).reshape(-1) # No precipitation data from Aurora
+    my_node_return['data/fields/Faxa_rain/values']  = ds_interp['tp'].values.reshape(-1) # m/s 
     my_node_return['data/fields/Sa_q2m/values'] = ds_interp['2rh'].values.reshape(-1) # fraction
     my_node_return['data/fields/Faxa_lwdn/values']  = ds_interp['lwdn'].values.reshape(-1) # W/m2
     my_node_return['data/fields/Faxa_swnet/values'] = ds_interp['swnet'].values.reshape(-1) # W/m2
