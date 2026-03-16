@@ -17,7 +17,7 @@ aurora_config:
                 name: rh2
                 mean: 0.748476
                 std: 0.158421
-                weight: 0.8
+                weight: 1.5
             2dt: # 2 meter dew point temperature, K
                 name: d2m
                 mean: 274.268463
@@ -42,23 +42,25 @@ aurora_config:
                 name: ssrd
                 mean: 164.015975
                 std: 248.105117
-                weight: 1.5
+                weight: 2.5
             lwdn: # surface downwelling longwave radiation, W/m2
                 name: strd
                 mean: 303.236175
                 std: 94.240333
-                weight: 1.5
+                weight: 2.5
             tcc: # total cloud cover, fraction
                 name: tcc
                 mean: 0.675755
                 std: 0.364521
-                weight: 1.0
+                weight: 2.0
+            tp: # total precipitation, m/s
+                name: tp
+                mean: 2.825574796361252e-08
+                std: 1.1377525765965402e-07
+                weight: 2.5
     prediction:
-        start: "2011-08-26T18:00:00" # we need data also for t-6 and t-12 for prediction at "2011-08-27T06:00:00"
-        end: "2011-09-01T00:00:00"
         steps: 2 # lead time for forecast in steps of 6 hours
-        checkpoint_file: /glade/work/turuncu/ML/research/aurora/run_2012-2017_all_vars/aurora-0.25-pretrained-new.ckpt
+        checkpoint_file: /glade/derecho/scratch/turuncu/data/aurora_runs/run_2012-2017_all_vars_tp/aurora-0.25-pretrained-new.ckpt
         batch_size: 1
         num_workers: 0 # >0 such as 4 is giving error since we are running GeoGate on a single PET
         distributed_sampler: false
-        output_path: .

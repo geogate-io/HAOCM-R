@@ -35,7 +35,6 @@ if __name__ == "__main__":
     perform_temporal_interpolation = True
     temporal_interpolation_method = "linear"
     has_import = True # enable two-way coupling and feedback from ocean to atmosphere
-    clip_2rh_values = False  # Clip 2m relative humidity values to [0.0, 1.0]
 
     # Output file path if it does not exist
     if not os.path.exists(ofile_path):
@@ -212,6 +211,8 @@ if __name__ == "__main__":
                 ds['tp'] = ds['tp'].clip(min=0.0)
                 ds['swdn'] = ds['swdn'].clip(min=0.0)
                 ds['swnet'] = ds['swnet'].clip(min=0.0)
+                ds['2rh'] = ds['2rh'].clip(min=0.0)
+                ds['2rh'] = ds['2rh'].clip(max=1.0)
 
                 # Save predictions to netCDF files
                 ds.to_netcdf(ofile, engine="netcdf4")
@@ -246,12 +247,6 @@ if __name__ == "__main__":
     else:
         print("No temporal interpolation requested.", flush=True)
         ds_interp = ds.isel(time=0).astype(np.float64)
-
-    # Limit relative humidity to [0.0, 1.0]
-    # TODO: Fix this in Aurora model
-    if clip_2rh_values:
-        ds_interp['2rh'] = ds_interp['2rh'].where(ds_interp['2rh'] <=1.0, other=1.0)
-        ds_interp['2rh'] = ds_interp['2rh'].where(ds_interp['2rh'] >=0.0, other=0.0)
 
     # Return Conduit node with data, unit conversion is handled by ROMS via roms_data.yaml
     my_node_return = Node()

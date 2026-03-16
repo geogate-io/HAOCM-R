@@ -316,12 +316,12 @@ import:
     long_name:           precipitation rate
     short_name:          rain                                   # Faxa_rain
     data_variables:      [rain, time]
-    source_units:        kg m-2 s-1
+    source_units:        m s-1
     destination_units:   kg m-2 s-1
     source_grid:         cell_center
     destination_grid:    cell_center
     add_offset:          0.0d0
-    scale:               1.0d0
+    scale:               1000.0d0
     debug_write:         false
     connected_to:        *DATA
     map_type:            mapbilnr
