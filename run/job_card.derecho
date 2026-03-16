@@ -3,9 +3,9 @@
 #PBS -e err
 #PBS -N dlroms
 #PBS -A P93300606
-#PBS -q develop
-#PBS -l select=1:ncpus=13:mpiprocs=13:ompthreads=1
-#PBS -l walltime=00:20:00
+#PBS -q main
+#PBS -l select=1:ncpus=13:mpiprocs=13:ompthreads=1:ngpus=1:gpu_type=a100
+#PBS -l walltime=01:00:00
 
 set -eux
 source ../envs/derecho_env_gnu.sh
