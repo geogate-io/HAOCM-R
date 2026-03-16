@@ -1,6 +1,6 @@
-## HAOCM
+## HAOCM-R
 
-The HAOCM modeling system is a hybrid modeling application that combines a DL weather model with a physical model (Regional Ocean Modeling System)
+The HAOCM-R modeling system is a hybrid modeling application that combines a DL weather model with a physical ocean model (Regional Ocean Modeling System)
 
 ## Configuration
 
@@ -12,22 +12,22 @@ The predefined configuration uses the ROMS Hurricane Irene configuration. The de
 
 ### Cloning Repository
 
-The HAOCM modeling system includes two sub-components: (1) GeoGate (as data producer) and (2) the Regional Ocean Modeling System (ROMS) ocean model component. To clone the repository, the following command can be used:
+The HAOCM-R modeling system includes two sub-components: (1) GeoGate (as data producer) and (2) the Regional Ocean Modeling System (ROMS) ocean model component. To clone the repository, the following command can be used:
 
 ```console
-$ git clone --recursive https://github.com/geogate-io/HAOCM
+$ git clone --recursive https://github.com/geogate-io/HAOCM-R
 ```
 
 ### Installing Dependencies
 
-The software dependencies to run the HAOCM application can be installed using [Conda](https://conda-forge.org) and [Spack](https://spack.io) package managers. The dependencies are already installed on [NCAR's Derecho](https://ncar-hpc-docs.readthedocs.io/en/latest/compute-systems/derecho/) HPC platform and can be accessed in the `/glade/work/turuncu/ML/envs/spack-1.0.2/var/spack/environments/myenv` directory. More information about creating a run environment from scratch can be found in the [GeoGateApps](https://github.com/geogate-io/GeoGateApps) prototype application repository, specifically in the [PythonSendCatalystRecv readme file](https://github.com/geogate-io/GeoGateApps/blob/main/PythonSendCatalystRecv/README.md).
+The software dependencies to run the HAOCM-R application can be installed using [Conda](https://conda-forge.org) and [Spack](https://spack.io) package managers. The dependencies are already installed on [NCAR's Derecho](https://ncar-hpc-docs.readthedocs.io/en/latest/compute-systems/derecho/) HPC platform and can be accessed in the `/glade/work/turuncu/ML/envs/spack-1.0.2/var/spack/environments/myenv` directory. More information about creating a run environment from scratch can be found in the [GeoGateApps](https://github.com/geogate-io/GeoGateApps) prototype application repository, specifically in the [PythonSendCatalystRecv readme file](https://github.com/geogate-io/GeoGateApps/blob/main/PythonSendCatalystRecv/README.md).
 
 ### Building Model
 
-To build the Hurricane Irene configuration on NCAR's Derecho machine, the [build.sh](https://github.com/geogate-io/HAOCM/blob/main/build.sh) script can be used. The script relies on a pre-installed Spack environment and uses the [derecho_env_gnu.sh](https://github.com/geogate-io/HAOCM/blob/main/envs/derecho_env_gnu.sh) file to load required modules.
+To build the Hurricane Irene configuration on NCAR's Derecho machine, the [build.sh](https://github.com/geogate-io/HAOCM-R/blob/main/build.sh) script can be used. The script relies on a pre-installed Spack environment and uses the [derecho_env_gnu.sh](https://github.com/geogate-io/HAOCM-R/blob/main/envs/derecho_env_gnu.sh) file to load required modules.
 
 ```console
-$ cd HAOCM
+$ cd HAOCM-R
 $ ./build.sh
 ```
 Once it is successfully built, the executable for the coupled application (`esmx_app`) can be found in the `install/bin` directory.
@@ -40,7 +40,7 @@ The one-way coupled configurations are used to force the underlying ocean compon
 
 ##### a. ERA5 (0.25 deg)
 
-This configuration uses ERA5 data found in the [ROMS Idealized and Realistic Test Cases](https://github.com/myroms/roms_test/blob/main/IRENE/Coupling/roms_data_cdeps/Readme.md) repository. The GeoGate Python plugin is used to trigger [data_era5.py](https://github.com/geogate-io/HAOCM/blob/main/run/data_era5.py) to populate GeoGate's export state and pass the information to the ROMS ocean model.
+This configuration uses ERA5 data found in the [ROMS Idealized and Realistic Test Cases](https://github.com/myroms/roms_test/blob/main/IRENE/Coupling/roms_data_cdeps/Readme.md) repository. The GeoGate Python plugin is used to trigger [data_era5.py](https://github.com/geogate-io/HAOCM-R/blob/main/run/data_era5.py) to populate GeoGate's export state and pass the information to the ROMS ocean model.
 
 ##### b. GraphCast Operational (0.25 deg)
 
@@ -48,7 +48,7 @@ The [GraphCastOperational](https://nvidia.github.io/earth2studio/modules/generat
 
 The GraphCastOperational model does not provide all the variables needed to force the ROMS ocean model. Therefore, variables such as `net shortwave radiation`, `downwelling longwave radiation`, and `surface relative humidity` are sourced directly from the ERA5 dataset to meet these requirements. There are plans to enhance GraphCast by incorporating the missing variables, either through fine-tuning or by utilizing another AI/ML-based weather model that supplies all necessary variables and interacts with the ocean component by exchanging sea surface temperature (SST) data as well.
 
-To run this configuration, the `PythonScripts` and `ExportMeshFile` options need to be set as follows in the [esmxRun.yaml](https://github.com/geogate-io/HAOCM/blob/main/run/esmxRun.yaml) configuration file.
+To run this configuration, the `PythonScripts` and `ExportMeshFile` options need to be set as follows in the [esmxRun.yaml](https://github.com/geogate-io/HAOCM-R/blob/main/run/esmxRun.yaml) configuration file.
 
 ```
 PythonScripts: data_graphcast_operational.py
@@ -64,13 +64,13 @@ Aurora is a machine learning model that can predict atmospheric variables, such 
 
 ###### Prepare Input for Aurora Model
 
-To download ERA5 data for the Aurora Model, you can use the [get_data.py](https://github.com/geogate-io/HAOCM/blob/main/run/get_data.py) script. Please note that this script requires the cdsapi module to retrieve data from the Copernicus Climate Data Store (CDS). For more information on how to install the necessary module and configure your user settings, please refer to the instructions [here](https://cds.climate.copernicus.eu/how-to-api).
+To download ERA5 data for the Aurora Model, you can use the [get_data.py](https://github.com/geogate-io/HAOCM-R/blob/main/run/get_data.py) script. Please note that this script requires the cdsapi module to retrieve data from the Copernicus Climate Data Store (CDS). For more information on how to install the necessary module and configure your user settings, please refer to the instructions [here](https://cds.climate.copernicus.eu/how-to-api).
 
-The original dataset requires post-processing to ensure compatibility with Aurora's BatchDataset class used in the prediction script to read input data in an efficient way. For this purpose, the [split.py](https://github.com/geogate-io/HAOCM/blob/main/run/split.py) script can be used.
+The original dataset requires post-processing to ensure compatibility with Aurora's BatchDataset class used in the prediction script to read input data in an efficient way. For this purpose, the [split.py](https://github.com/geogate-io/HAOCM-R/blob/main/run/split.py) script can be used.
 
 ### Running Model
 
-Once the configuration is compiled successfully, it can be run by using the job submission script (NCAR Derecho, [job_card.derecho](https://github.com/geogate-io/HAOCM/blob/main/run/job_card.derecho)). The job can be submitted by using following command,
+Once the configuration is compiled successfully, it can be run by using the job submission script (NCAR Derecho, [job_card.derecho](https://github.com/geogate-io/HAOCM-R/blob/main/run/job_card.derecho)). The job can be submitted by using following command,
 
 ```console
 $ qsub job_card.derecho
