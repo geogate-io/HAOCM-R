@@ -1,5 +1,7 @@
 ## HAOCM-R
 
+[![DOI](https://zenodo.org/badge/1081370670.svg)](https://doi.org/10.5281/zenodo.20019195)
+
 The HAOCM-R modeling system is a hybrid modeling application that combines a DL weather model with a physical ocean model (Regional Ocean Modeling System)
 
 ## Configuration
